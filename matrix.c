@@ -11,7 +11,7 @@
  * @param  height 
  * @return        true if success
  */
-bool matrixCreate(matrix_t *matrix, int width, int height) {
+bool matrixCreate(matrix_t *matrix, unsigned width, unsigned height) {
 	// apenas alocando...
 	matrix->elems = (matrix_elem_t **) malloc(height*sizeof(matrix_elem_t *));
 	if(matrix->elems == NULL) {
@@ -30,6 +30,21 @@ bool matrixCreate(matrix_t *matrix, int width, int height) {
 }
 
 /**
+ * return true if elem in lin x col exists
+ * @param  matrix simple &matrix_t
+ * @param  lin    
+ * @param  col    
+ * @return        true or false
+ */
+bool matrixElemExists(matrix_t *matrix, int lin, int col) {
+	if(	(lin >= matrix->height  || lin < 0) ||
+		(col >= matrix->width || col < 0) ) { // caso a linha e coluna estejam fora do 
+		return false;
+	}
+	return true;
+}
+
+/**
  * set one elem in matrix
  * @param  matrix simple &matrix_t initialized
  * @param  lin    
@@ -38,14 +53,25 @@ bool matrixCreate(matrix_t *matrix, int width, int height) {
  * @return        true if success
  */
 bool matrixSet(matrix_t *matrix, int lin, int col, matrix_elem_t val) {
-	int width = matrix->width;
-	int height = matrix->height;
-	if(	(lin >= height  || lin < 0) ||
-		(col >= width || col < 0) ) { // caso a linha e coluna estejam fora do 
+	if(!matrixElemExists(matrix, lin, col)) {
 		return false;
 	}
 	matrix->elems[lin][col] = val;
 	return true;
+}
+
+/**
+ * return the elem at lin x col
+ * @param  matrix simple &matrix_t
+ * @param  lin    
+ * @param  col    
+ * @return        value of elem in double
+ */
+double matrixGet(matrix_t *matrix, int lin, int col) {
+	if(!matrixElemExists(matrix, lin, col)) {
+		return 0;
+	}
+	return matrix->elems[lin][col];
 }
 
 /**
@@ -221,6 +247,61 @@ bool matrixResolveLinearsys(matrix_t *matrix) {
 		}
 	}
 	return true;
+}
+
+/**
+ * aux func, only used in matrixDet. get the matrix of the rest cuting the last line and the col = factor
+ * @param matrix_src  source matrix
+ * @param matrix_dest destiny matrix, not initialized
+ * @param factor      col to cut
+ */
+void _matrixDet(matrix_t *matrix_src, matrix_t *matrix_dest, int factor) {
+	int width = matrix_src->width;
+	matrixCreate(matrix_dest, width-1, width-1);
+	int m = 0; // represents line of matrix dest
+	int i; // representes line of matrix src
+	int j = 0; // represents col
+	for(i=0; i<width; i++) {
+		if(i == factor) { // jump the line
+			continue;
+		}
+
+		for(j=0; j<width-1; j++) {
+			matrixSet(matrix_dest, m, j, matrixGet(matrix_src, i, j));
+		}
+		m++;
+	}
+}
+
+/**
+ * calculates the determinant of a matrix
+ * @param  matrix a simple &matrix_t
+ * @return        
+ */
+double matrixDet(matrix_t *matrix) {
+	// cut a line and a col, get the rest of the matrix and get the det
+	if(matrix->width != matrix->height) { // matrix need to has same value of width and height
+		return 0;
+	}
+	int width = matrix->width;
+	if(width <= 0) {
+		return 0;
+	} else if(width == 1) {
+		return matrix->elems[0][0];
+	}
+	// calculates the det in matrix with 2 or more lines
+	int i;
+	double result = 0;
+	for(i=0; i<width; i++) { // i variant width
+		matrix_t rest_matrix;
+		_matrixDet(matrix, &rest_matrix, i);
+		if((i+width+1) % 2 == 1) {
+			result -= matrixDet(&rest_matrix);
+		} else {
+			result += matrixDet(&rest_matrix);
+		}
+	}
+	return result;
 }
 
 /**
