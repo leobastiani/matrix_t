@@ -1,3 +1,6 @@
+#ifndef __MATRIX_H__
+#define __MATRIX_H__
+
 typedef double matrix_elem_t;
 typedef struct {
 	matrix_elem_t **elems;
@@ -124,3 +127,5 @@ double matrixDet(matrix_t *matrix);
  * @param matrix simple &matrix_t
  */
 void matrixFree(matrix_t *matrix);
+
+#endif // __MATRIX_H__
